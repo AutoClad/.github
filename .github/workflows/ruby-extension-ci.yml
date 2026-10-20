@@ -1,0 +1,59 @@
+# Reusable CI for SketchUp extension repos.
+#
+# Expects in the calling repo: Gemfile (rubocop, rubocop-sketchup, minitest,
+# rake), Rakefile with a :test task, and scripts/package.rb that writes the
+# .rbz into dist/. Ruby is pinned to what SketchUp embeds.
+name: Ruby extension CI
+
+on:
+  workflow_call:
+    inputs:
+      ruby-version:
+        description: Ruby version to test on (SketchUp 2026 embeds 3.2)
+        type: string
+        default: '3.2'
+      build-rbz:
+        description: Build the .rbz and upload it as an artifact
+        type: boolean
+        default: true
+
+jobs:
+  lint:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ inputs.ruby-version }}
+          bundler-cache: true
+      - run: bundle exec rubocop --format github
+
+  test:
+    name: Minitest (Ruby ${{ inputs.ruby-version }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ inputs.ruby-version }}
+          bundler-cache: true
+      - run: bundle exec rake test
+
+  build:
+    name: Build .rbz
+    if: ${{ inputs.build-rbz }}
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ inputs.ruby-version }}
+          bundler-cache: true
+      - run: bundle exec rake package
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rbz
+          path: dist/*.rbz
+          if-no-files-found: error
