@@ -2,7 +2,7 @@
 #
 # Expects in the calling repo: Gemfile (rubocop, rubocop-sketchup, minitest,
 # rake), Rakefile with a :test task, and scripts/package.rb that writes the
-# .rbz into dist/. Ruby is pinned to what SketchUp embeds.
+# .rbz into dist/<environment>/. Ruby is pinned to what SketchUp embeds.
 name: Ruby extension CI
 
 on:
@@ -55,5 +55,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: rbz
-          path: dist/*.rbz
+          path: dist/**/*.rbz
           if-no-files-found: error
